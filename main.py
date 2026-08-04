@@ -24,13 +24,13 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = os.getenv("8732852883:AAFL2usoq2xCwkqfBiP-FJx0lOXHKaxTDu8")
 
 
 def main():
 
     if not BOT_TOKEN:
-        raise ValueError("BOT_TOKEN belum diatur.")
+        raise ValueError("8732852883:AAFL2usoq2xCwkqfBiP-FJx0lOXHKaxTDu8")
 
     app = Application.builder().token(BOT_TOKEN).build()
 
