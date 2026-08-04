@@ -1,11 +1,21 @@
 import os
 import logging
 
-from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
     ContextTypes,
+    MessageHandler,
+    filters,
+)
+
+from bot.handlers import (
+    start,
+    help_command,
+    save_command,
+    list_command,
+    clear_command,
+    handle_message,
 )
 
 logging.basicConfig(
@@ -16,26 +26,8 @@ logging.basicConfig(
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👋 Selamat datang di Gmail Check Bot!\n\n"
-        "Perintah yang tersedia:\n"
-        "/save - Simpan daftar Gmail\n"
-        "/check - Bandingkan dengan daftar email bad\n"
-        "/list - Lihat jumlah email tersimpan\n"
-        "/clear - Hapus semua email\n"
-        "/help - Bantuan"
-    )
-
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Kirim /save untuk menyimpan email.\n"
-        "Kirim /check untuk mengecek email bad."
-    )
-
-
 def main():
+
     if not BOT_TOKEN:
         raise ValueError("BOT_TOKEN belum diatur.")
 
@@ -43,6 +35,16 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("save", save_command))
+    app.add_handler(CommandHandler("list", list_command))
+    app.add_handler(CommandHandler("clear", clear_command))
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            handle_message,
+        )
+    )
 
     print("Bot sedang berjalan...")
 
