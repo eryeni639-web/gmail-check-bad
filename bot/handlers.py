@@ -82,3 +82,54 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         "✅ Semua email berhasil dihapus."
     )
+
+# ==========================
+# SAVE
+# ==========================
+
+async def save_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    context.user_data["mode"] = "save"
+
+    await update.message.reply_text(
+        "📥 Kirim daftar Gmail Anda.\n\n"
+        "Format:\n"
+        "email1@gmail.com\n"
+        "email2@gmail.com\n"
+        "email3@gmail.com"
+    )
+
+
+# ==========================
+# HANDLE MESSAGE
+# ==========================
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    mode = context.user_data.get("mode")
+
+    if mode != "save":
+        return
+
+    user_id = update.effective_user.id
+
+    text = update.message.text
+
+    emails = []
+
+    for line in text.splitlines():
+
+        line = line.strip()
+
+        if "@" in line:
+
+            emails.append(line)
+
+    save_emails(user_id, emails)
+
+    context.user_data["mode"] = None
+
+    await update.message.reply_text(
+
+        f"✅ Berhasil menyimpan {len(emails)} email."
+    )
