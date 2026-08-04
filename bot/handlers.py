@@ -1,6 +1,10 @@
 import re
 
-from telegram import Update
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
 from telegram.ext import ContextTypes
 
 from bot.storage import (
@@ -18,14 +22,49 @@ from bot.compare import compare_emails
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+    keyboard = [
+
+        [
+            InlineKeyboardButton(
+                "📧 Cek Status Gmail",
+                callback_data="cek_status"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "💾 Simpan Gmail",
+                callback_data="save"
+            ),
+
+            InlineKeyboardButton(
+                "📋 List Gmail",
+                callback_data="list"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "🗑 Hapus Semua",
+                callback_data="clear"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "❓ Bantuan",
+                callback_data="help"
+            )
+        ]
+
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
-        "👋 Selamat datang di Gmail Check Bot!\n\n"
-        "Perintah yang tersedia:\n\n"
-        "/save - Simpan daftar Gmail\n"
-        "/check - Bandingkan dengan daftar email bad\n"
-        "/list - Lihat jumlah email tersimpan\n"
-        "/clear - Hapus semua email\n"
-        "/help - Bantuan"
+        "👋 Selamat Datang di Gmail Check Bot\n\n"
+        "Silakan pilih menu di bawah ini.",
+        reply_markup=reply_markup
     )
 
 
