@@ -13,6 +13,7 @@ from bot.handlers import (
     start,
     help_command,
     save_command,
+    check_command,
     list_command,
     clear_command,
     handle_message,
@@ -36,6 +37,7 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("save", save_command))
+    app.add_handler(CommandHandler("check", check_command))
     app.add_handler(CommandHandler("list", list_command))
     app.add_handler(CommandHandler("clear", clear_command))
 
