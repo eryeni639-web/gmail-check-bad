@@ -1,7 +1,11 @@
 import json
 import os
 
-DATA_FILE = "users.json"
+
+DATA_DIR = "data"
+DATA_FILE = os.path.join(DATA_DIR, "users.json")
+
+os.makedirs(DATA_DIR, exist_ok=True)
 
 
 def load_users():
