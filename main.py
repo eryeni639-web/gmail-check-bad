@@ -4,7 +4,7 @@ import logging
 from telegram.ext import (
     Application,
     CommandHandler,
-    ContextTypes,
+    CallbackQueryHandler,
     MessageHandler,
     filters,
 )
@@ -17,6 +17,7 @@ from bot.handlers import (
     list_command,
     clear_command,
     handle_message,
+    button_handler,
 )
 
 logging.basicConfig(
@@ -40,7 +41,11 @@ def main():
     app.add_handler(CommandHandler("check", check_command))
     app.add_handler(CommandHandler("list", list_command))
     app.add_handler(CommandHandler("clear", clear_command))
+app.add_handler(
+    CallbackQueryHandler(button_handler)
+)
 
+    
     app.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
