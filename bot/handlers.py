@@ -114,13 +114,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif update.callback_query:
+    await update.callback_query.answer()
 
-        await update.callback_query.answer()
-
-        await update.callback_query.message.reply_text(
-            text,
-            parse_mode="Markdown",
-        )
+    await update.callback_query.message.reply_text(
+        text,
+        parse_mode="Markdown",
+    )
 
     elif update.callback_query:
 
