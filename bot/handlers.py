@@ -18,6 +18,7 @@ from bot.storage import (
 
 from bot.compare import compare_emails
 
+
 # ==========================
 # START
 # ==========================
@@ -45,7 +46,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "📋 List Gmail",
                 callback_data="list",
             ),
-
             InlineKeyboardButton(
                 "🗑 Clear",
                 callback_data="clear",
@@ -81,6 +81,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup,
     )
 
+
 # ==========================
 # HELP
 # ==========================
@@ -89,21 +90,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "📖 *Panduan Gmail Check Bot*\n\n"
-
         "💾 *Simpan Gmail*\n"
-        "Digunakan untuk menyimpan daftar Gmail Anda.\n\n"
-
+        "Menyimpan daftar Gmail Anda.\n\n"
         "🔍 *Compare Bad Gmail*\n"
-        "Membandingkan email Anda dengan daftar email bad.\n\n"
-
+        "Membandingkan Gmail Anda dengan daftar bad.\n\n"
         "📋 *List Gmail*\n"
         "Melihat jumlah Gmail yang tersimpan.\n\n"
-
         "🗑 *Clear*\n"
-        "Menghapus seluruh Gmail yang tersimpan.\n\n"
-
+        "Menghapus semua Gmail yang tersimpan.\n\n"
         "📧 *Cek Status Gmail*\n"
-        "Fitur ini akan ditambahkan pada update berikutnya."
+        "Fitur akan ditambahkan berikutnya."
     )
 
     if update.message:
@@ -114,21 +110,14 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif update.callback_query:
-    await update.callback_query.answer()
 
-    await update.callback_query.message.reply_text(
-        text,
-        parse_mode="Markdown",
-    )
+        await update.callback_query.answer()
 
-    elif update.callback_query:
+        await update.callback_query.message.reply_text(
+            text,
+            parse_mode="Markdown",
+        )
 
-    await update.callback_query.answer()
-
-    await update.callback_query.message.reply_text(
-        text,
-        parse_mode="Markdown",
-    )
 # ==========================
 # SAVE
 # ==========================
@@ -162,6 +151,7 @@ async def save_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
         )
 
+
 # ==========================
 # CHECK
 # ==========================
@@ -170,11 +160,11 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     my_emails = get_emails(update.effective_user.id)
 
-    if len(my_emails) == 0:
+    if not my_emails:
 
         text = (
             "❌ Belum ada Gmail yang tersimpan.\n\n"
-            "Silakan pilih *💾 Simpan Gmail* terlebih dahulu."
+            "Gunakan menu *💾 Simpan Gmail* terlebih dahulu."
         )
 
         if update.message:
@@ -200,7 +190,7 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "🔍 *Compare Bad Gmail*\n\n"
         "Silakan kirim daftar email bad.\n\n"
-        "Bot akan membandingkan dengan email yang telah Anda simpan."
+        "Bot akan membandingkan dengan Gmail yang telah disimpan."
     )
 
     if update.message:
@@ -240,13 +230,12 @@ async def list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         text += (
             "\n\n"
-            "📄 *10 Gmail pertama:*\n\n"
+            "10 Gmail pertama:\n\n"
             f"{preview}"
         )
 
         if total > 10:
-
-            text += f"\n\n... dan {total-10} Gmail lainnya."
+            text += f"\n\n... dan {total - 10} Gmail lainnya."
 
     else:
 
@@ -268,6 +257,7 @@ async def list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown",
         )
 
+
 # ==========================
 # CLEAR
 # ==========================
@@ -278,11 +268,11 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     emails = get_emails(user_id)
 
-    if len(emails) == 0:
+    if not emails:
 
         text = (
             "📂 *Data Gmail*\n\n"
-            "Tidak ada Gmail yang tersimpan."
+            "Belum ada Gmail yang tersimpan."
         )
 
         if update.message:
@@ -309,7 +299,7 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = (
         "🗑 *Hapus Gmail*\n\n"
-        f"✅ Berhasil menghapus *{total}* Gmail yang tersimpan."
+        f"✅ Berhasil menghapus *{total}* Gmail."
     )
 
     if update.message:
@@ -338,90 +328,68 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.answer()
 
-    data = query.data
+    action = query.data
 
     # ======================
     # SAVE
     # ======================
 
-    if data == "save":
+    if action == "save":
 
-        context.user_data["mode"] = "save"
-
-        await query.message.reply_text(
-            "💾 *Simpan Gmail*\n\n"
-            "Silakan kirim daftar Gmail Anda.\n\n"
-            "Contoh:\n"
-            "gmail1@gmail.com\n"
-            "gmail2@gmail.com",
-            parse_mode="Markdown",
-        )
-
+        await save_command(update, context)
         return
 
     # ======================
     # CHECK
     # ======================
 
-    if data == "check":
+    if action == "check":
 
-        my_emails = get_emails(update.effective_user.id)
-
-        if len(my_emails) == 0:
-
-            await query.message.reply_text(
-                "❌ Belum ada Gmail yang disimpan.\n\n"
-                "Silakan simpan Gmail terlebih dahulu.",
-            )
-
-            return
-
-        context.user_data["mode"] = "check"
-
-        await query.message.reply_text(
-            "🔍 Kirim daftar email bad untuk dibandingkan."
-        )
-
+        await check_command(update, context)
         return
 
     # ======================
     # LIST
     # ======================
 
-    if data == "list":
+    if action == "list":
 
         await list_command(update, context)
-
         return
 
     # ======================
     # CLEAR
     # ======================
 
-    if data == "clear":
+    if action == "clear":
 
         await clear_command(update, context)
-
         return
 
     # ======================
     # HELP
     # ======================
 
-    if data == "help":
+    if action == "help":
 
         await help_command(update, context)
-
         return
 
     # ======================
     # STATUS
     # ======================
 
-    if data == "status":
+    if action == "status":
+
+        context.user_data["mode"] = "status"
 
         await query.message.reply_text(
-            "🚧 Fitur Cek Status Gmail masih dalam tahap pengembangan."
+            "📧 *Cek Status Gmail*\n\n"
+            "Kirim daftar Gmail yang ingin dicek.\n\n"
+            "Contoh:\n"
+            "gmail1@gmail.com\n"
+            "gmail2@gmail.com",
+            parse_mode="Markdown",
         )
 
         return
@@ -437,7 +405,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if mode is None:
         return
 
-    text = update.message.text
+    text = update.message.text or ""
 
     emails = []
 
@@ -451,10 +419,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         if match:
-
-            emails.append(
-                match.group(0).lower()
-            )
+            emails.append(match.group(0).lower())
 
     # ==========================
     # SAVE
@@ -470,8 +435,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["mode"] = None
 
         await update.message.reply_text(
-            "✅ Berhasil menyimpan "
-            f"{len(emails)} Gmail."
+            f"✅ Berhasil menyimpan {len(emails)} Gmail."
         )
 
         return
@@ -496,26 +460,49 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if result["matched"]:
 
             message = (
-                "❌ HASIL PENGECEKAN\n\n"
-                f"Email Saya : {result['total_my']}\n"
-                f"Email Bad : {result['total_bad']}\n"
-                f"Cocok : {result['matched_count']}\n\n"
-                "Daftar Email Bad:\n\n"
+                "❌ *HASIL PENGECEKAN*\n\n"
+                f"📧 Email Saya : {result['total_my']}\n"
+                f"🚫 Email Bad : {result['total_bad']}\n"
+                f"⚠️ Cocok : {result['matched_count']}\n\n"
+                "*Daftar Email Bad:*\n"
             )
 
             for email in result["matched"]:
-
-                message += f"• {email}\n"
+                message += f"\n• `{email}`"
 
         else:
 
             message = (
-                "✅ HASIL PENGECEKAN\n\n"
-                f"Email Saya : {result['total_my']}\n"
-                f"Email Bad : {result['total_bad']}\n\n"
+                "✅ *HASIL PENGECEKAN*\n\n"
+                f"📧 Email Saya : {result['total_my']}\n"
+                f"🚫 Email Bad : {result['total_bad']}\n\n"
                 "Tidak ada Gmail Anda yang masuk daftar bad."
             )
 
         await update.message.reply_text(
-            message
+            message,
+            parse_mode="Markdown",
         )
+
+        return
+
+    # ==========================
+    # STATUS (sementara)
+    # ==========================
+
+    if mode == "status":
+
+        context.user_data["mode"] = None
+
+        message = (
+            "🚧 *Fitur Cek Status Gmail*\n\n"
+            "Fitur ini masih dalam tahap pengembangan.\n\n"
+            f"Jumlah Gmail diterima: {len(emails)}"
+        )
+
+        await update.message.reply_text(
+            message,
+            parse_mode="Markdown",
+        )
+
+        return
