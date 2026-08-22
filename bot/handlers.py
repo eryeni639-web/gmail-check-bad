@@ -58,6 +58,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 callback_data="status",
             )
         ],
+        [
+    InlineKeyboardButton(
+        "📧 Cek Status Gmail",
+        callback_data="status",
+    )
+],
+[
+    InlineKeyboardButton(
+        "🔤 Name To Gmail",
+        callback_data="name_to_gmail",
+    )
+],
 
         [
             InlineKeyboardButton(
