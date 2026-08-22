@@ -406,19 +406,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await help_command(update, context)
         return
-        
-     # ======================
-     # NAME TO GMAIL
-     # ======================
 
-     if action == "name_to_gmail":
+    # ======================
+    # NAME TO GMAIL
+    # ======================
 
-         await name_to_gmail_command(
-         update,
-         context
-    )
-    return
-    
+    if action == "name_to_gmail":
+
+        await name_to_gmail_command(
+            update,
+            context
+        )
+
+        return
+
     # ======================
     # STATUS
     # ======================
