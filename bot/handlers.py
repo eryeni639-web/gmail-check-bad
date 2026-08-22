@@ -406,20 +406,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await help_command(update, context)
         return
+        
+     # ======================
+     # NAME TO GMAIL
+     # ======================
 
-# ======================
-# NAME TO GMAIL
-# ======================
+     if action == "name_to_gmail":
 
-if action == "name_to_gmail":
-
-    await name_to_gmail_command(
-        update,
-        context
+         await name_to_gmail_command(
+         update,
+         context
     )
-
     return
-
+    
     # ======================
     # STATUS
     # ======================
@@ -451,26 +450,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = update.message.text or ""
+    
+    # ==========================
+    # NAME TO GMAIL
+    # ==========================
 
-    emails = []
-
-    for line in text.splitlines():
-
-        line = line.strip()
-
-        match = re.search(
-            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
-            line,
-        )
-
-        if match:
-            emails.append(match.group(0).lower())
-
-# ==========================
-# NAME TO GMAIL
-# ==========================
-
-if mode == "name_to_gmail":
+    if mode == "name_to_gmail":
 
     text = update.message.text or ""
 
@@ -514,6 +499,20 @@ if mode == "name_to_gmail":
     )
 
     return
+
+    emails = []
+
+    for line in text.splitlines():
+
+        line = line.strip()
+
+        match = re.search(
+            r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",
+            line,
+        )
+
+        if match:
+            emails.append(match.group(0).lower())
 
     # ==========================
     # SAVE
