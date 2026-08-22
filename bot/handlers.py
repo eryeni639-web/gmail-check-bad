@@ -465,6 +465,55 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if match:
             emails.append(match.group(0).lower())
 
+# ==========================
+# NAME TO GMAIL
+# ==========================
+
+if mode == "name_to_gmail":
+
+    text = update.message.text or ""
+
+    # Pisahkan berdasarkan baris
+    usernames = text.splitlines()
+
+    results = []
+
+    for username in usernames:
+
+        # Hapus spasi kosong di awal/akhir baris saja
+        username = username.strip()
+
+        # Lewati baris kosong
+        if not username:
+            continue
+
+        # Jika sudah memiliki @gmail.com,
+        # jangan tambahkan lagi
+        if username.lower().endswith("@gmail.com"):
+            results.append(username)
+        else:
+            results.append(f"{username}@gmail.com")
+
+    if not results:
+        await update.message.reply_text(
+            "❌ Tidak ada username yang ditemukan.\n\n"
+            "Silakan kirim username Anda."
+        )
+        return
+
+    result_text = "\n".join(results)
+
+    await update.message.reply_text(
+        "✅ *Name To Gmail selesai!*\n\n"
+        f"Total: `{len(results)}` username\n\n"
+        "```text\n"
+        f"{result_text}\n"
+        "```",
+        parse_mode="Markdown",
+    )
+
+    return
+
     # ==========================
     # SAVE
     # ==========================
