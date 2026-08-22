@@ -316,6 +316,40 @@ async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # ==========================
+# NAME TO GMAIL
+# ==========================
+
+async def name_to_gmail_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    context.user_data["mode"] = "name_to_gmail"
+
+    text = (
+        "🔤 *Name To Gmail*\n\n"
+        "Kirim daftar username secara massal.\n"
+        "Bot hanya akan menambahkan `@gmail.com` "
+        "tanpa mengubah username.\n\n"
+        "Contoh:\n\n"
+        "johnsmith\n"
+        "michaelandrew27\n"
+        "alexanderbrown"
+    )
+
+    if update.message:
+        await update.message.reply_text(
+            text,
+            parse_mode="Markdown",
+        )
+
+    elif update.callback_query:
+        await update.callback_query.message.reply_text(
+            text,
+            parse_mode="Markdown",
+        )
+
+# ==========================
 # BUTTON HANDLER
 # ==========================
 
@@ -371,6 +405,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await help_command(update, context)
         return
+
+# ======================
+# NAME TO GMAIL
+# ======================
+
+if action == "name_to_gmail":
+
+    await name_to_gmail_command(
+        update,
+        context
+    )
+
+    return
 
     # ======================
     # STATUS
