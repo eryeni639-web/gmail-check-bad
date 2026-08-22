@@ -1,4 +1,5 @@
 import re
+from io import BytesIO
 
 from telegram import (
     Update,
@@ -458,7 +459,7 @@ async def handle_message(
     # ==========================
     # NAME TO GMAIL
     # ==========================
-
+    
     if mode == "name_to_gmail":
 
         usernames = text.splitlines()
@@ -470,6 +471,7 @@ async def handle_message(
             username = username.strip()
 
             if not username:
+
                 continue
 
             if username.lower().endswith("@gmail.com"):
@@ -479,29 +481,57 @@ async def handle_message(
             else:
 
                 results.append(
+
                     f"{username}@gmail.com"
+
                 )
 
         if not results:
 
             await update.message.reply_text(
+
                 "❌ Tidak ada username yang ditemukan.\n\n"
+
                 "Silakan kirim username Anda."
+
             )
 
             return
 
+        # Gabungkan hasil menjadi satu username per baris
+
         result_text = "\n".join(results)
+
+        # Ubah hasil menjadi file TXT di memory
+
+        file_data = BytesIO(
+
+            result_text.encode("utf-8")
+
+        )
+
+        file_data.name = "name_to_gmail.txt"
 
         context.user_data["mode"] = None
 
-        await update.message.reply_text(
-            "✅ *Name To Gmail selesai!*\n\n"
-            f"Total: `{len(results)}` username\n\n"
-            "```text\n"
-            f"{result_text}\n"
-            "```",
+        await update.message.reply_document(
+
+            document=file_data,
+
+            filename="name_to_gmail.txt",
+
+            caption=(
+
+                "✅ *Name To Gmail selesai!*\n\n"
+
+                f"📊 Total: *{len(results)}* username\n\n"
+
+                "📄 Hasil sudah dibuat menjadi file TXT."
+
+            ),
+
             parse_mode="Markdown",
+
         )
 
         return
