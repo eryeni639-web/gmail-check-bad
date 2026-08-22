@@ -443,7 +443,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # HANDLE MESSAGE
 # ==========================
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     mode = context.user_data.get("mode")
 
@@ -451,55 +454,61 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = update.message.text or ""
-    
+
     # ==========================
     # NAME TO GMAIL
     # ==========================
 
     if mode == "name_to_gmail":
 
-    text = update.message.text or ""
+        usernames = text.splitlines()
 
-    # Pisahkan berdasarkan baris
-    usernames = text.splitlines()
+        results = []
 
-    results = []
+        for username in usernames:
 
-    for username in usernames:
+            username = username.strip()
 
-        # Hapus spasi kosong di awal/akhir baris saja
-        username = username.strip()
+            if not username:
+                continue
 
-        # Lewati baris kosong
-        if not username:
-            continue
+            if username.lower().endswith("@gmail.com"):
 
-        # Jika sudah memiliki @gmail.com,
-        # jangan tambahkan lagi
-        if username.lower().endswith("@gmail.com"):
-            results.append(username)
-        else:
-            results.append(f"{username}@gmail.com")
+                results.append(username)
 
-    if not results:
+            else:
+
+                results.append(
+                    f"{username}@gmail.com"
+                )
+
+        if not results:
+
+            await update.message.reply_text(
+                "❌ Tidak ada username yang ditemukan.\n\n"
+                "Silakan kirim username Anda."
+            )
+
+            return
+
+        result_text = "\n".join(results)
+
+        context.user_data["mode"] = None
+
         await update.message.reply_text(
-            "❌ Tidak ada username yang ditemukan.\n\n"
-            "Silakan kirim username Anda."
+            "✅ *Name To Gmail selesai!*\n\n"
+            f"Total: `{len(results)}` username\n\n"
+            "```text\n"
+            f"{result_text}\n"
+            "```",
+            parse_mode="Markdown",
         )
+
         return
 
-    result_text = "\n".join(results)
-
-    await update.message.reply_text(
-        "✅ *Name To Gmail selesai!*\n\n"
-        f"Total: `{len(results)}` username\n\n"
-        "```text\n"
-        f"{result_text}\n"
-        "```",
-        parse_mode="Markdown",
-    )
-
-    return
+    # ==========================
+    # EXTRACT EMAIL
+    # ==========================
 
     emails = []
 
@@ -513,7 +522,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         if match:
-            emails.append(match.group(0).lower())
+
+            emails.append(
+                match.group(0).lower()
+            )
 
     # ==========================
     # SAVE
@@ -562,6 +574,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
             for email in result["matched"]:
+
                 message += f"\n• `{email}`"
 
         else:
@@ -581,7 +594,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # ==========================
-    # STATUS (sementara)
+    # STATUS
     # ==========================
 
     if mode == "status":
