@@ -2,302 +2,296 @@ import asyncio
 import re
 from io import BytesIO
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 
 from bot.storage import save_emails, get_emails, clear_emails
 from bot.compare import compare_emails
 from bot.generators.generator_api import generate_usernames, generate_iphone_uas
 
+MAX_GENERATE = 5000
 
-def main_keyboard():
+
+def main_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton('💾 Simpan Gmail', callback_data='save')],
-        [InlineKeyboardButton('🔍 Compare Bad Gmail', callback_data='check')],
-        [InlineKeyboardButton('📋 List Gmail', callback_data='list'), InlineKeyboardButton('🗑 Clear', callback_data='clear')],
-        [InlineKeyboardButton('📧 Name To Gmail', callback_data='name_to_gmail')],
-        [InlineKeyboardButton('👤 Generator Username', callback_data='gen_username')],
-        [InlineKeyboardButton('📱 Generator iPhone UA', callback_data='gen_ua')],
-        [InlineKeyboardButton('📊 Status Gmail', callback_data='status')],
-        [InlineKeyboardButton('❓ Bantuan', callback_data='help')],
+        [InlineKeyboardButton("💾 Simpan Gmail", callback_data="save")],
+        [InlineKeyboardButton("🔍 Compare Bad Gmail", callback_data="check")],
+        [
+            InlineKeyboardButton("📋 List Gmail", callback_data="list"),
+            InlineKeyboardButton("🗑 Clear", callback_data="clear"),
+        ],
+        [InlineKeyboardButton("📧 Name To Gmail", callback_data="name_to_gmail")],
+        [InlineKeyboardButton("👤 Generate Username", callback_data="gen_username")],
+        [InlineKeyboardButton("📱 Generate iPhone UA", callback_data="gen_ua")],
+        [InlineKeyboardButton("❓ Bantuan", callback_data="help")],
     ])
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['mode'] = None
+    context.user_data["mode"] = None
     await update.message.reply_text(
-        '👋 *Selamat Datang di Gmail Check Bot*\n\nPilih fitur yang ingin digunakan:',
-        parse_mode='Markdown', reply_markup=main_keyboard()
+        "👋 *Selamat Datang di Gmail Check Bot*\n\nSilakan pilih menu di bawah ini.",
+        parse_mode="Markdown",
+        reply_markup=main_menu(),
     )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        '📖 *Panduan*\n\n'
-        '💾 *Simpan Gmail* — menyimpan daftar Gmail per pengguna.\n\n'
-        '🔍 *Compare Bad Gmail* — membandingkan Gmail tersimpan dengan daftar bad.\n\n'
-        '📋 *List Gmail* — melihat Gmail tersimpan.\n\n'
-        '🗑 *Clear* — menghapus Gmail tersimpan.\n\n'
-        '📧 *Name To Gmail* — menambahkan @gmail.com ke username secara massal.\n\n'
-        '👤 *Generator Username* — membuat username dan mengirim hasil sebagai TXT.\n\n'
-        '📱 *Generator iPhone UA* — membuat UA iPhone unik dan mengirim hasil sebagai TXT.\n\n'
-        '📊 *Status Gmail* — placeholder status checker yang ada di versi repository saat ini.'
+        "📖 *Panduan Gmail Check Bot*\n\n"
+        "💾 *Simpan Gmail* — menyimpan daftar Gmail Anda.\n\n"
+        "🔍 *Compare Bad Gmail* — membandingkan Gmail tersimpan dengan daftar bad.\n\n"
+        "📋 *List Gmail* — melihat Gmail yang tersimpan.\n\n"
+        "🗑 *Clear* — menghapus Gmail tersimpan.\n\n"
+        "📧 *Name To Gmail* — menambahkan @gmail.com ke username.\n\n"
+        "👤 *Generate Username* — membuat username dari database nama dan mengirim hasil TXT.\n\n"
+        "📱 *Generate iPhone UA* — membuat User-Agent iPhone dan mengirim hasil TXT."
     )
     if update.callback_query:
         await update.callback_query.answer()
-        await update.callback_query.message.reply_text(text, parse_mode='Markdown')
+        await update.callback_query.message.reply_text(text, parse_mode="Markdown")
     else:
-        await update.message.reply_text(text, parse_mode='Markdown')
+        await update.message.reply_text(text, parse_mode="Markdown")
 
 
 async def save_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['mode'] = 'save'
-    target = update.callback_query.message if update.callback_query else update.message
+    context.user_data["mode"] = "save"
+    text = (
+        "💾 *Simpan Gmail*\n\n"
+        "Silakan kirim daftar Gmail Anda, satu per baris."
+    )
     if update.callback_query:
         await update.callback_query.answer()
-    await target.reply_text(
-        '💾 *Simpan Gmail*\n\nKirim daftar Gmail, satu per baris.', parse_mode='Markdown'
-    )
+        await update.callback_query.message.reply_text(text, parse_mode="Markdown")
+    else:
+        await update.message.reply_text(text, parse_mode="Markdown")
 
 
 async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not get_emails(update.effective_user.id):
-        target = update.callback_query.message if update.callback_query else update.message
+    my_emails = get_emails(update.effective_user.id)
+    if not my_emails:
+        text = "❌ Belum ada Gmail yang tersimpan.\n\nGunakan *💾 Simpan Gmail* terlebih dahulu."
         if update.callback_query:
             await update.callback_query.answer()
-        await target.reply_text('❌ Belum ada Gmail tersimpan. Gunakan *Simpan Gmail* terlebih dahulu.', parse_mode='Markdown')
+            await update.callback_query.message.reply_text(text, parse_mode="Markdown")
+        else:
+            await update.message.reply_text(text, parse_mode="Markdown")
         return
-    context.user_data['mode'] = 'check'
-    target = update.callback_query.message if update.callback_query else update.message
+    context.user_data["mode"] = "check"
+    text = "🔍 *Compare Bad Gmail*\n\nSilakan kirim daftar email bad, satu per baris."
     if update.callback_query:
         await update.callback_query.answer()
-    await target.reply_text('🔍 *Compare Bad Gmail*\n\nKirim daftar email bad, satu per baris.', parse_mode='Markdown')
+        await update.callback_query.message.reply_text(text, parse_mode="Markdown")
+    else:
+        await update.message.reply_text(text, parse_mode="Markdown")
 
 
 async def list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     emails = get_emails(update.effective_user.id)
-    text = f'📋 *Daftar Gmail*\n\n📧 Total Gmail tersimpan: *{len(emails)}*'
-    if emails:
-        text += '\n\n' + '\n'.join(emails[:10])
-        if len(emails) > 10:
-            text += f'\n\n... dan {len(emails)-10} Gmail lainnya.'
-    target = update.callback_query.message if update.callback_query else update.message
+    total = len(emails)
+    text = f"📋 *Daftar Gmail*\n\n📧 Total Gmail tersimpan: *{total}*"
+    if total:
+        text += "\n\n10 Gmail pertama:\n\n" + "\n".join(emails[:10])
+        if total > 10:
+            text += f"\n\n... dan {total - 10} Gmail lainnya."
+    else:
+        text += "\n\nBelum ada Gmail yang tersimpan."
     if update.callback_query:
         await update.callback_query.answer()
-    await target.reply_text(text, parse_mode='Markdown')
+        await update.callback_query.message.reply_text(text, parse_mode="Markdown")
+    else:
+        await update.message.reply_text(text, parse_mode="Markdown")
 
 
 async def clear_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     emails = get_emails(user_id)
-    target = update.callback_query.message if update.callback_query else update.message
+    if not emails:
+        text = "📂 *Data Gmail*\n\nBelum ada Gmail yang tersimpan."
+    else:
+        total = len(emails)
+        clear_emails(user_id)
+        text = f"🗑 *Hapus Gmail*\n\n✅ Berhasil menghapus *{total}* Gmail."
     if update.callback_query:
         await update.callback_query.answer()
-    if not emails:
-        await target.reply_text('📂 Belum ada Gmail yang tersimpan.')
-        return
-    clear_emails(user_id)
-    await target.reply_text(f'🗑 Berhasil menghapus *{len(emails)}* Gmail.', parse_mode='Markdown')
+        await update.callback_query.message.reply_text(text, parse_mode="Markdown")
+    else:
+        await update.message.reply_text(text, parse_mode="Markdown")
 
 
 async def name_to_gmail_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['mode'] = 'name_to_gmail'
-    target = update.callback_query.message if update.callback_query else update.message
+    context.user_data["mode"] = "name_to_gmail"
+    text = "🔤 *Name To Gmail*\n\nKirim daftar username secara massal, satu per baris."
     if update.callback_query:
         await update.callback_query.answer()
-    await target.reply_text(
-        '🔤 *Name To Gmail*\n\nKirim username satu per baris. Bot akan menambahkan `@gmail.com`.',
-        parse_mode='Markdown'
+        await update.callback_query.message.reply_text(text, parse_mode="Markdown")
+    else:
+        await update.message.reply_text(text, parse_mode="Markdown")
+
+
+async def generator_username_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["mode"] = "generate_username"
+    text = (
+        "👤 *Generate Username*\n\n"
+        f"Kirim jumlah username yang ingin dibuat. Maksimal {MAX_GENERATE}.\n\n"
+        "Contoh: `50`"
     )
+    await update.callback_query.message.reply_text(text, parse_mode="Markdown")
 
 
-async def username_generator_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['mode'] = 'gen_username_count'
-    target = update.callback_query.message if update.callback_query else update.message
-    if update.callback_query:
-        await update.callback_query.answer()
-    await target.reply_text('👤 *Generate Username*\n\nMasukkan jumlah username yang ingin dibuat.\nContoh: `50`', parse_mode='Markdown')
-
-
-async def ua_generator_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['mode'] = 'gen_ua_count'
-    target = update.callback_query.message if update.callback_query else update.message
-    if update.callback_query:
-        await update.callback_query.answer()
-    await target.reply_text('📱 *Generate iPhone UA*\n\nMasukkan jumlah UA yang ingin dibuat.\nContoh: `50`', parse_mode='Markdown')
-
-
-async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['mode'] = 'status'
-    target = update.callback_query.message if update.callback_query else update.message
-    if update.callback_query:
-        await update.callback_query.answer()
-    await target.reply_text('📊 *Status Gmail*\n\nKirim daftar Gmail yang ingin dicek.\n\nCatatan: status checker belum diimplementasikan pada repository saat ini.', parse_mode='Markdown')
-
-
-async def send_generated_file(update: Update, path, caption):
-    with open(path, 'rb') as f:
-        await update.message.reply_document(
-            document=InputFile(f, filename=path.name),
-            caption=caption,
-            parse_mode='Markdown'
-        )
+async def generator_ua_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["mode"] = "generate_ua"
+    keyboard = [[
+        InlineKeyboardButton("🍎 Standard", callback_data="ua_standard"),
+        InlineKeyboardButton("📱 + Model", callback_data="ua_model"),
+    ]]
+    await update.callback_query.message.reply_text(
+        "📱 *Generate iPhone UA*\n\nPilih format User-Agent:",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    action = query.data
     await query.answer()
+    action = query.data
 
-    actions = {
-        'save': save_command,
-        'check': check_command,
-        'list': list_command,
-        'clear': clear_command,
-        'help': help_command,
-        'name_to_gmail': name_to_gmail_command,
-        'gen_username': username_generator_command,
-        'gen_ua': ua_generator_command,
-        'status': status_command,
-    }
-    handler = actions.get(action)
-    if handler:
-        await handler(update, context)
+    if action == "save":
+        await save_command(update, context)
+    elif action == "check":
+        await check_command(update, context)
+    elif action == "list":
+        await list_command(update, context)
+    elif action == "clear":
+        await clear_command(update, context)
+    elif action == "help":
+        await help_command(update, context)
+    elif action == "name_to_gmail":
+        await name_to_gmail_command(update, context)
+    elif action == "gen_username":
+        await generator_username_command(update, context)
+    elif action == "gen_ua":
+        await generator_ua_command(update, context)
+    elif action in ("ua_standard", "ua_model"):
+        if context.user_data.get("mode") != "generate_ua":
+            return
+        context.user_data["ua_with_model"] = action == "ua_model"
+        context.user_data["mode"] = "generate_ua_count"
+        await query.message.reply_text(
+            f"📱 Mode: {'+ Model iPhone' if action == 'ua_model' else 'Standard'}\n\n"
+            f"Kirim jumlah UA yang ingin dibuat. Maksimal {MAX_GENERATE}.\n\nContoh: `50`",
+            parse_mode="Markdown",
+        )
+    elif action == "status":
+        context.user_data["mode"] = "status"
+        await query.message.reply_text("📧 *Cek Status Gmail*\n\nKirim daftar Gmail.", parse_mode="Markdown")
 
 
-EMAIL_RE = re.compile(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}')
-
-
-def extract_emails(text):
-    return [m.group(0).lower() for m in EMAIL_RE.finditer(text)]
+async def _send_txt(update: Update, filename: str, content: str, caption: str):
+    data = BytesIO(content.encode("utf-8"))
+    data.name = filename
+    await update.message.reply_document(document=data, filename=filename, caption=caption, parse_mode="Markdown")
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    mode = context.user_data.get('mode')
+    mode = context.user_data.get("mode")
     if not mode or not update.message or not update.message.text:
         return
-
     text = update.message.text.strip()
 
-    if mode == 'name_to_gmail':
-        results = []
-        for username in text.splitlines():
-            username = username.strip()
-            if not username:
-                continue
-            results.append(username if username.lower().endswith('@gmail.com') else f'{username}@gmail.com')
-        context.user_data['mode'] = None
+    if mode in ("generate_username", "generate_ua_count"):
+        if not text.isdigit():
+            await update.message.reply_text("❌ Masukkan jumlah dalam angka. Contoh: 50")
+            return
+        count = int(text)
+        if count < 1 or count > MAX_GENERATE:
+            await update.message.reply_text(f"❌ Jumlah harus antara 1 dan {MAX_GENERATE}.")
+            return
+
+        current_mode = mode
+        with_model = bool(context.user_data.get("ua_with_model", False))
+        context.user_data["mode"] = None
+
+        status = await update.message.reply_text("⏳ Sedang generate, tunggu sebentar...")
+        try:
+            if current_mode == "generate_username":
+                usernames, output = await asyncio.to_thread(generate_usernames, count)
+                if not usernames:
+                    await status.edit_text("❌ Tidak ada username yang berhasil dibuat. Periksa database_nama.txt dan history.")
+                    return
+                content = output.read_text(encoding="utf-8")
+                await status.delete()
+                await _send_txt(
+                    update,
+                    "hasil_username.txt",
+                    content,
+                    f"✅ *Generate Username selesai*\n\n📊 Berhasil: *{len(usernames)}* username",
+                )
+            else:
+                uas, output = await asyncio.to_thread(generate_iphone_uas, count, with_model)
+                if not uas:
+                    await status.edit_text("❌ Tidak ada UA yang berhasil dibuat.")
+                    return
+                content = output.read_text(encoding="utf-8")
+                await status.delete()
+                await _send_txt(
+                    update,
+                    "hasil_iphone_ua.txt",
+                    content,
+                    f"✅ *Generate iPhone UA selesai*\n\n📊 Berhasil: *{len(uas)}* UA\n📱 Mode: *{'+ Model' if with_model else 'Standard'}*",
+                )
+        except Exception as exc:
+            await status.edit_text(f"❌ Generator gagal:\n`{str(exc)[:3500]}`", parse_mode="Markdown")
+        return
+
+    if mode == "name_to_gmail":
+        usernames = [line.strip() for line in text.splitlines() if line.strip()]
+        results = [u if u.lower().endswith("@gmail.com") else f"{u}@gmail.com" for u in usernames]
+        context.user_data["mode"] = None
         if not results:
-            await update.message.reply_text('❌ Tidak ada username yang ditemukan.')
+            await update.message.reply_text("❌ Tidak ada username yang ditemukan.")
             return
-        data = BytesIO(('\n'.join(results) + '\n').encode('utf-8'))
-        data.name = 'name_to_gmail.txt'
-        await update.message.reply_document(document=data, filename=data.name, caption=f'✅ Selesai. Total: {len(results)} username.')
+        await _send_txt(update, "name_to_gmail.txt", "\n".join(results) + "\n", f"✅ *Name To Gmail selesai!*\n\n📊 Total: *{len(results)}* username")
         return
 
-    if mode == 'save':
-        emails = extract_emails(text)
-        if not emails:
-            await update.message.reply_text('❌ Tidak menemukan alamat Gmail. Kirim ulang daftar email.')
-            return
+    emails = []
+    for line in text.splitlines():
+        match = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", line.strip())
+        if match:
+            emails.append(match.group(0).lower())
+
+    if mode == "save":
         save_emails(update.effective_user.id, emails)
-        context.user_data['mode'] = None
-        await update.message.reply_text(f'✅ Berhasil menyimpan {len(emails)} Gmail.')
+        context.user_data["mode"] = None
+        await update.message.reply_text(f"✅ Berhasil menyimpan {len(emails)} Gmail.")
         return
 
-    if mode == 'check':
-        emails = extract_emails(text)
-        my_emails = get_emails(update.effective_user.id)
-        result = compare_emails(my_emails, emails)
-        context.user_data['mode'] = None
-        if result['matched']:
-            body = '\n'.join(f'• `{email}`' for email in result['matched'])
-            await update.message.reply_text(
-                f"❌ *HASIL PENGECEKAN*\n\n📧 Email Saya: {result['total_my']}\n🚫 Email Bad: {result['total_bad']}\n⚠️ Cocok: {result['matched_count']}\n\n*Daftar:*\n{body}",
-                parse_mode='Markdown'
+    if mode == "check":
+        result = compare_emails(get_emails(update.effective_user.id), emails)
+        context.user_data["mode"] = None
+        if result["matched"]:
+            message = (
+                "❌ *HASIL PENGECEKAN*\n\n"
+                f"📧 Email Saya : {result['total_my']}\n"
+                f"🚫 Email Bad : {result['total_bad']}\n"
+                f"⚠️ Cocok : {result['matched_count']}\n\n"
+                "*Daftar Email Bad:*\n" + "\n".join(f"• `{e}`" for e in result["matched"])
             )
         else:
-            await update.message.reply_text(
-                f"✅ *HASIL PENGECEKAN*\n\n📧 Email Saya: {result['total_my']}\n🚫 Email Bad: {result['total_bad']}\n\nTidak ada Gmail Anda yang masuk daftar bad.",
-                parse_mode='Markdown'
+            message = (
+                "✅ *HASIL PENGECEKAN*\n\n"
+                f"📧 Email Saya : {result['total_my']}\n"
+                f"🚫 Email Bad : {result['total_bad']}\n\n"
+                "Tidak ada Gmail Anda yang masuk daftar bad."
             )
+        await update.message.reply_text(message, parse_mode="Markdown")
         return
 
-    if mode == 'status':
-        context.user_data['mode'] = None
-        await update.message.reply_text(f'🚧 Status checker belum tersedia. Jumlah Gmail diterima: {len(extract_emails(text))}.')
-        return
-
-    if mode == 'gen_username_count':
-        try:
-            count = int(text)
-            if count <= 0 or count > 10000:
-                raise ValueError
-        except ValueError:
-            await update.message.reply_text('❌ Masukkan jumlah antara 1 sampai 10000.')
-            return
-
-        context.user_data['mode'] = None
-        msg = await update.message.reply_text(f'⏳ Sedang membuat {count} username...')
-        try:
-            path = await asyncio.to_thread(generate_usernames, count)
-            await msg.edit_text(f'✅ Selesai membuat {count} username.\n\n📄 File TXT sedang dikirim...')
-            await send_generated_file(update, path, f'👤 *Generate Username selesai*\n📊 Berhasil: {count}\n📄 Hasil: `{path.name}`')
-        except Exception as exc:
-            await msg.edit_text(f'❌ Gagal generate username:\n{exc}')
-        return
-
-    if mode == 'gen_ua_count':
-        try:
-            count = int(text)
-            if count <= 0 or count > 10000:
-                raise ValueError
-        except ValueError:
-            await update.message.reply_text('❌ Masukkan jumlah antara 1 sampai 10000.')
-            return
-
-        context.user_data['ua_count'] = count
-        context.user_data['mode'] = 'gen_ua_model'
+    if mode == "status":
+        context.user_data["mode"] = None
         await update.message.reply_text(
-            f'📱 Jumlah: *{count}*\n\nPilih format UA:',
-            parse_mode='Markdown',
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton('🍎 Standard', callback_data='ua_standard')],
-                [InlineKeyboardButton('📱 + Model iPhone', callback_data='ua_model')],
-                [InlineKeyboardButton('❌ Batal', callback_data='ua_cancel')],
-            ])
+            "🚧 *Fitur Cek Status Gmail*\n\nFitur ini masih dalam tahap pengembangan.\n\n"
+            f"Jumlah Gmail diterima: {len(emails)}",
+            parse_mode="Markdown",
         )
-        return
-
-    if mode == 'gen_ua_model':
-        await update.message.reply_text('Gunakan tombol pilihan format UA di atas.')
-
-
-async def ua_format_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    action = query.data
-    if action == 'ua_cancel':
-        context.user_data['mode'] = None
-        context.user_data.pop('ua_count', None)
-        await query.message.reply_text('❌ Generate UA dibatalkan.')
-        return
-
-    count = context.user_data.get('ua_count')
-    if not count:
-        context.user_data['mode'] = 'gen_ua_count'
-        await query.message.reply_text('Masukkan jumlah UA terlebih dahulu.')
-        return
-
-    with_model = action == 'ua_model'
-    context.user_data['mode'] = None
-    context.user_data.pop('ua_count', None)
-    msg = await query.message.reply_text(f'⏳ Sedang membuat {count} UA iPhone...')
-    try:
-        path = await asyncio.to_thread(generate_iphone_uas, count, with_model)
-        await msg.edit_text(f'✅ Selesai membuat {count} UA.\n\n📄 File TXT sedang dikirim...')
-        caption = f"📱 *Generate iPhone UA selesai*\n📊 Berhasil: {count}\n🔧 Model: {'Ya' if with_model else 'Tidak'}\n📄 Hasil: `{path.name}`"
-        with open(path, 'rb') as f:
-            await query.message.reply_document(document=InputFile(f, filename=path.name), caption=caption, parse_mode='Markdown')
-    except Exception as exc:
-        await msg.edit_text(f'❌ Gagal generate UA:\n{exc}')

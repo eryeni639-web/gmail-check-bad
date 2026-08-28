@@ -1,18 +1,14 @@
 import json
 import os
 
-
 DATA_DIR = "data"
 DATA_FILE = os.path.join(DATA_DIR, "users.json")
-
 os.makedirs(DATA_DIR, exist_ok=True)
 
 
 def load_users():
-    """Memuat data user dari file JSON."""
     if not os.path.exists(DATA_FILE):
         return {}
-
     with open(DATA_FILE, "r", encoding="utf-8") as file:
         try:
             return json.load(file)
@@ -21,28 +17,23 @@ def load_users():
 
 
 def save_users(data):
-    """Menyimpan data user ke file JSON."""
     with open(DATA_FILE, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=4)
 
 
 def save_emails(user_id, emails):
-    """Simpan daftar email milik user."""
     data = load_users()
     data[str(user_id)] = emails
     save_users(data)
 
 
 def get_emails(user_id):
-    """Ambil daftar email user."""
     data = load_users()
     return data.get(str(user_id), [])
 
 
 def clear_emails(user_id):
-    """Hapus daftar email user."""
     data = load_users()
-
     if str(user_id) in data:
         del data[str(user_id)]
         save_users(data)
