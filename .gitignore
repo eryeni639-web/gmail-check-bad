@@ -1,4 +1,12 @@
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+venv/
 .env
-.DS_Store
+bot/generators/.ua_history.txt
+bot/generators/generator_history.csv
+bot/generators/used_names.csv
+bot/generators/used_usernames.txt
+outputs/*.txt
+outputs/username/*.txt
+outputs/iphone_ua/*.txt

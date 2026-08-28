@@ -29,7 +29,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 
 def main():
-
     if not BOT_TOKEN:
         raise ValueError("BOT_TOKEN belum dibuat.")
 
@@ -41,20 +40,10 @@ def main():
     app.add_handler(CommandHandler("check", check_command))
     app.add_handler(CommandHandler("list", list_command))
     app.add_handler(CommandHandler("clear", clear_command))
-
-    app.add_handler(
-        CallbackQueryHandler(button_handler)
-    )
-
-    app.add_handler(
-        MessageHandler(
-            filters.TEXT & ~filters.COMMAND,
-            handle_message,
-        )
-    )
+    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Bot sedang berjalan...")
-
     app.run_polling()
 
 
